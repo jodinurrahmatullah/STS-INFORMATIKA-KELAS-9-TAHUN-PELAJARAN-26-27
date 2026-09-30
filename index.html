@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ujian STS Informatika Kelas 9</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; user-select: none; }
+        .hide { display: none !important; }
+        .fullscreen-lock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; z-index: 50; overflow-y: auto; }
+        /* Mencegah seleksi teks dan klik kanan */
+        * { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
+        /* Animasi peringatan */
+        @keyframes flashRed {
+            0% { background-color: #fee2e2; }
+            50% { background-color: #ef4444; color: white; }
+            100% { background-color: #fee2e2; }
+        }
+        .flash-warning { animation: flashRed 0.5s infinite; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-6">
+                <img src="https://placehold.co/100x100/1d4ed8/white?text=SMPN+38" alt="Logo" class="mx-auto rounded-full mb-2">
+                <h1 class="text-2xl font-bold text-gray-800">SUMATIF TENGAH SEMESTER</h1>
+                <h2 class="text-lg font-semibold text-blue-600">INFORMATIKA KELAS 9</h2>
+                <p class="text-sm text-gray-500">SMPN 38 BANDAR LAMPUNG 2026/2027</p>
+            </div>
+            
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-sm text-yellow-700 rounded">
+                <strong>PERHATIAN:</strong> Ujian ini menggunakan sistem anti-kecurangan ketat. Dilarang keluar aplikasi, screenshot, atau memindahkan wajah dari kamera. Pelanggaran 4x = Dikeluarkan! Pastikan Volume HP Anda aktif.
+            </div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                    <input type="text" id="student-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Kelas</label>
+                    <select id="student-class" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Pilih Kelas</option>
+                        <option value="9A">9 A</option>
+                        <option value="9B">9 B</option>
+                        <option value="9C">9 C</option>
+                        <option value="9D">9 D</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    Mulai Ujian & Aktifkan Kamera
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="exam-screen" class="hide fullscreen-lock flex flex-col bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
+            <div>
+                <div class="font-bold text-gray-800" id="header-name">Nama Siswa</div>
+                <div class="text-xs text-gray-500" id="header-class">Kelas</div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="timer-display" class="text-xl font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded">90:00</div>
+            </div>
+        </header>
+
+        <!-- Camera Preview (Mini) -->
+        <div class="fixed bottom-4 right-4 z-50 w-28 h-36 bg-black rounded-lg overflow-hidden shadow-lg border-2 border-gray-300">
+            <video id="camera-preview" autoplay muted playsinline class="w-full h-full object-cover"></video>
+            <div id="face-status-badge" class="absolute top-1 left-1 text-[9px] text-white bg-green-600 px-1 rounded font-bold">REC • WAJAH OK</div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 max-w-3xl mx-auto w-full pb-24">
+            <div class="bg-white p-6 rounded-xl shadow-sm mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-sm font-semibold text-gray-500">Soal No. <span id="current-q-num" class="text-blue-600 text-lg">1</span></span>
+                    <button id="btn-show-grid" class="text-sm text-blue-600 border border-blue-600 px-2 py-1 rounded hover:bg-blue-50">Daftar Soal</button>
+                </div>
+                <p id="question-text" class="text-lg text-gray-800 mb-6 font-medium leading-relaxed"></p>
+                <div id="options-container" class="space-y-3">
+                    <!-- Options injected here -->
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex justify-between items-center">
+                <button id="btn-prev" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 font-medium">← Sebelumnya</button>
+                <button id="btn-next" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">Selanjutnya →</button>
+                <button id="btn-finish" class="hide px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold shadow-md">Selesai Ujian</button>
+            </div>
+        </main>
+
+        <!-- Question Grid Modal -->
+        <div id="grid-modal" class="hide fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl p-4 w-full max-w-md max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold">Navigasi Soal</h3>
+                    <button id="btn-close-grid" class="text-red-500 font-bold text-xl">&times;</button>
+                </div>
+                <div id="question-grid" class="grid grid-cols-5 gap-2 overflow-y-auto p-2">
+                    <!-- Grid buttons injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="hide min-h-screen bg-gray-100 py-8 px-4">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-white p-6 rounded-xl shadow-lg mb-6 text-center">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Ujian Selesai!</h1>
+                <p class="text-gray-600 mb-6">Jawaban dan video telah tersimpan.</p>
+                
+                <div class="grid grid-cols-3 gap-4 text-center mb-6">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="text-sm text-green-600 font-bold">Benar</div>
+                        <div class="text-2xl font-black text-green-700" id="res-correct">0</div>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <div class="text-sm text-red-600 font-bold">Salah</div>
+                        <div class="text-2xl font-black text-red-700" id="res-wrong">0</div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="text-sm text-blue-600 font-bold">Nilai</div>
+                        <div class="text-2xl font-black text-blue-700" id="res-score">0</div>
+                    </div>
+                </div>
+
+                <div id="violation-summary" class="bg-orange-50 border border-orange-200 p-4 rounded-lg text-left mb-6">
+                    <h3 class="font-bold text-orange-800 mb-2">Catatan Pelanggaran: <span id="res-violation-count">0</span>x</h3>
+                    <ul id="res-violation-list" class="text-sm text-orange-700 list-disc pl-5 space-y-1">
+                        <!-- Violations injected here -->
+                    </ul>
+                </div>
+
+                <div class="space-x-4">
+                    <button id="btn-download-video" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm font-medium hide">Download Rekaman</button>
+                    <button onclick="location.reload()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium">Kembali ke Login</button>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-sm text-yellow-800 text-center mb-6">
+                <strong>Peringatan!</strong> Jika Anda melakukan screenshot pada halaman ini, Anda akan langsung dikembalikan ke halaman login.
+            </div>
+
+            <!-- Review section removed to hide answer keys as requested -->
+        </div>
+    </div>
+
+    <div id="custom-alert" class="hide fixed inset-0 bg-black bg-opacity-75 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-sm text-center transform scale-100 transition-transform duration-300">
+            <div id="alert-icon" class="text-5xl mb-4">⚠️</div>
+            <h3 id="alert-title" class="text-xl font-bold mb-2 text-gray-800">Peringatan</h3>
+            <p id="alert-message" class="text-gray-600 mb-6 whitespace-pre-line text-sm"></p>
+            <div id="alert-buttons" class="flex flex-col gap-2">
+                <button id="btn-alert-ok" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow">Kembali Mengerjakan Soal Ujian</button>
+                <button id="btn-alert-cancel" class="hide w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-300">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Soal dari Prompt
+        const questionsData = [
+            { id: 1, text: "Berpikir komputasional adalah cara berpikir untuk ....", options: ["A. Menghafalkan semua data", "B. Menyelesaikan masalah secara sistematis dan logis", "C. Menggunakan komputer tanpa aturan", "D. Menghindari penggunaan algoritma"], answer: "B" },
+            { id: 2, text: "Salah satu komponen utama berpikir komputasional yang digunakan untuk menemukan kesamaan atau pola dalam data adalah ....", options: ["A. Dekomposisi", "B. Abstraksi", "C. Pengenalan pola", "D. Iterasi"], answer: "C" },
+            { id: 3, text: "Jika seorang siswa memisahkan data nilai berdasarkan mata pelajaran agar lebih mudah dianalisis, kegiatan tersebut merupakan contoh ....", options: ["A. Abstraksi", "B. Dekomposisi", "C. Enkripsi", "D. Kompilasi"], answer: "B" },
+            { id: 4, text: "Dalam analisis data, abstraksi bertujuan untuk ....", options: ["A. Menambahkan semua informasi", "B. Menghilangkan informasi yang tidak relevan dan fokus pada hal penting", "C. Menghapus seluruh data", "D. Menggandakan data"], answer: "B" },
+            { id: 5, text: "Contoh penerapan berpikir komputasional dalam analisis data adalah ....", options: ["A. Mengurutkan nilai siswa dari yang terkecil ke terbesar", "B. Menggambar tanpa tujuan", "C. Menghapus semua data", "D. Menyalin data berulang kali tanpa analisis"], answer: "A" },
+            { id: 6, text: "Data berikut: 70, 80, 80, 90, 100. Nilai yang paling sering muncul disebut ....", options: ["A. Mean", "B. Median", "C. Modus", "D. Range"], answer: "C" },
+            { id: 7, text: "Jika data nilai siswa adalah 60, 70, 80, 90, dan 100, maka rata-ratanya adalah ....", options: ["A. 70", "B. 75", "C. 80", "D. 85"], answer: "C" },
+            { id: 8, text: "Tujuan utama melakukan analisis data adalah ....", options: ["A. Membuat data menjadi lebih banyak", "B. Mendapatkan informasi dan kesimpulan yang berguna dari data", "C. Menghapus data yang tidak disukai", "D. Mengubah semua data menjadi angka"], answer: "B" },
+            { id: 9, text: "Ketika kita menemukan bahwa penjualan meningkat setiap akhir pekan, kita sedang melakukan ....", options: ["A. Pengenalan pola", "B. Dekomposisi", "C. Abstraksi", "D. Debugging"], answer: "A" },
+            { id: 10, text: "Dalam proses analisis data, langkah yang tepat setelah data dikumpulkan adalah ....", options: ["A. Mengabaikan data", "B. Mengolah dan membersihkan data", "C. Mematikan komputer", "D. Menghapus data"], answer: "B" },
+            { id: 11, text: "Struktur data tree memiliki bentuk seperti ....", options: ["A. Jaringan tanpa hubungan", "B. Pohon dengan hubungan hierarkis", "C. Tabel dua dimensi", "D. Garis lurus saja"], answer: "B" },
+            { id: 12, text: "Elemen paling atas dalam struktur tree disebut ....", options: ["A. Leaf", "B. Edge", "C. Root", "D. Child"], answer: "C" },
+            { id: 13, text: "Node yang tidak mempunyai anak dalam struktur tree disebut ....", options: ["A. Root", "B. Parent", "C. Leaf", "D. Branch"], answer: "C" },
+            { id: 14, text: "Hubungan antara node induk dan node anak dalam tree disebut ....", options: ["A. Edge", "B. Array", "C. Index", "D. Variable"], answer: "A" },
+            { id: 15, text: "Jika node A memiliki node B dan C sebagai anaknya, maka A disebut ....", options: ["A. Leaf", "B. Child", "C. Parent", "D. Sibling"], answer: "C" },
+            { id: 16, text: "Node yang mempunyai parent yang sama disebut ....", options: ["A. Root", "B. Sibling", "C. Leaf", "D. Ancestor"], answer: "B" },
+            { id: 17, text: "Contoh penerapan struktur tree dalam kehidupan sehari-hari adalah ....", options: ["A. Struktur folder dan file pada komputer", "B. Lampu lalu lintas", "C. Kalkulator", "D. Jam digital"], answer: "A" },
+            { id: 18, text: "Struktur organisasi perusahaan dapat direpresentasikan menggunakan tree karena ....", options: ["A. Memiliki hubungan hierarkis", "B. Tidak memiliki hubungan antarbagian", "C. Semua bagian memiliki kedudukan yang sama", "D. Tidak memiliki data"], answer: "A" },
+            { id: 19, text: "Dalam struktur folder komputer, folder utama yang berada pada tingkat paling atas dapat dianalogikan sebagai ....", options: ["A. Leaf", "B. Root", "C. Sibling", "D. Child"], answer: "B" },
+            { id: 20, text: "Salah satu manfaat struktur tree adalah ....", options: ["A. Memudahkan representasi data yang memiliki hubungan hierarkis", "B. Menghilangkan semua data", "C. Membuat data tidak terstruktur", "D. Membatasi jumlah data menjadi satu"], answer: "A" },
+            { id: 21, text: "Graph merupakan struktur data yang terdiri atas ....", options: ["A. Node dan edge", "B. Root dan leaf saja", "C. Baris dan kolom", "D. Folder dan file saja"], answer: "A" },
+            { id: 22, text: "Dalam graph, titik atau objek yang dihubungkan disebut ....", options: ["A. Edge", "B. Vertex", "C. Root", "D. Leaf"], answer: "B" },
+            { id: 23, text: "Garis yang menghubungkan dua vertex dalam graph disebut ....", options: ["A. Node", "B. Edge", "C. Root", "D. Array"], answer: "B" },
+            { id: 24, text: "Contoh penggunaan graph dalam kehidupan sehari-hari adalah ....", options: ["A. Jaringan pertemanan pada media sosial", "B. Struktur folder saja", "C. Daftar belanja", "D. Dokumen teks biasa"], answer: "A" },
+            { id: 25, text: "Graph yang setiap edge-nya memiliki arah disebut ....", options: ["A. Undirected graph", "B. Directed graph", "C. Binary tree", "D. Linear graph"], answer: "B" },
+            { id: 26, text: "Pada graph tidak berarah, hubungan antara A dan B berarti ....", options: ["A. Hanya A yang terhubung ke B", "B. Hanya B yang terhubung ke A", "C. A dan B saling terhubung", "D. A dan B tidak memiliki hubungan"], answer: "C" },
+            { id: 27, text: "Peta jalan dapat direpresentasikan menggunakan graph karena ....", options: ["A. Kota dapat menjadi vertex dan jalan dapat menjadi edge", "B. Kota menjadi edge dan jalan menjadi root", "C. Semua jalan tidak saling berhubungan", "D. Peta tidak memiliki data"], answer: "A" },
+            { id: 28, text: "Graph berbobot adalah graph yang ....", options: ["A. Tidak mempunyai vertex", "B. Setiap edge atau hubungan dapat memiliki nilai tertentu", "C. Hanya mempunyai satu node", "D. Tidak mempunyai hubungan"], answer: "B" },
+            { id: 29, text: "Dalam aplikasi navigasi, jarak antara dua kota dapat digunakan sebagai ....", options: ["A. Vertex", "B. Root", "C. Bobot edge", "D. Leaf"], answer: "C" },
+            { id: 30, text: "Perbedaan utama tree dan graph adalah ....", options: ["A. Tree merupakan struktur hierarkis, sedangkan graph lebih umum untuk merepresentasikan hubungan", "B. Tree tidak memiliki node", "C. Graph tidak memiliki edge", "D. Tree selalu memiliki siklus"], answer: "A" },
+            { id: 31, text: "Data terstruktur adalah data yang ....", options: ["A. Tidak memiliki format", "B. Tersusun dalam format tertentu sehingga mudah diolah", "C. Selalu berupa gambar", "D. Tidak dapat dianalisis"], answer: "B" },
+            { id: 32, text: "Contoh data terstruktur adalah ....", options: ["A. Tabel data siswa", "B. Foto pemandangan", "C. Rekaman suara", "D. Video"], answer: "A" },
+            { id: 33, text: "Visualisasi data digunakan untuk ....", options: ["A. Membuat data sulit dipahami", "B. Menampilkan data secara visual agar pola dan informasi lebih mudah dipahami", "C. Menghapus data", "D. Mengacak data"], answer: "B" },
+            { id: 34, text: "Grafik yang paling tepat untuk membandingkan jumlah siswa pada beberapa kelas adalah ....", options: ["A. Diagram batang", "B. Diagram garis", "C. Diagram pencar", "D. Peta konsep"], answer: "A" },
+            { id: 35, text: "Diagram lingkaran biasanya digunakan untuk menunjukkan ....", options: ["A. Perubahan data berdasarkan waktu", "B. Proporsi atau persentase bagian terhadap keseluruhan", "C. Hubungan antar-node", "D. Struktur folder"], answer: "B" },
+            { id: 36, text: "Grafik garis paling sesuai digunakan untuk ....", options: ["A. Menampilkan perubahan suatu data dari waktu ke waktu", "B. Menampilkan struktur organisasi", "C. Menampilkan hierarki folder", "D. Menampilkan nama siswa saja"], answer: "A" },
+            { id: 37, text: "Jika ingin melihat hubungan antara tinggi badan dan berat badan siswa, visualisasi yang sesuai adalah ....", options: ["A. Diagram pencar (scatter plot)", "B. Diagram lingkaran", "C. Diagram organisasi", "D. Diagram tree"], answer: "A" },
+            { id: 38, text: "Salah satu keuntungan visualisasi data adalah ....", options: ["A. Membuat pola data lebih sulit ditemukan", "B. Mempermudah manusia memahami informasi dari kumpulan data", "C. Menghilangkan kebutuhan terhadap data", "D. Membuat data menjadi tidak akurat"], answer: "B" },
+            { id: 39, text: "Saat membuat grafik, judul dan label sumbu diperlukan agar ....", options: ["A. Grafik terlihat lebih rumit", "B. Pembaca memahami informasi yang ditampilkan", "C. Data menjadi lebih banyak", "D. Warna grafik bertambah"], answer: "B" },
+            { id: 40, text: "Jika grafik menunjukkan jumlah pengunjung sebuah website dari Januari hingga Juni, jenis grafik yang tepat adalah ....", options: ["A. Diagram garis", "B. Diagram lingkaran", "C. Tree", "D. Diagram organisasi"], answer: "A" },
+            { id: 41, text: "Algoritma adalah ....", options: ["A. Kumpulan langkah sistematis untuk menyelesaikan masalah", "B. Kumpulan gambar tanpa aturan", "C. Bahasa pemrograman tertentu", "D. Perangkat keras komputer"], answer: "A" },
+            { id: 42, text: "Salah satu ciri algoritma yang baik adalah ....", options: ["A. Langkah-langkahnya tidak jelas", "B. Memiliki langkah yang logis dan terurut", "C. Tidak memiliki tujuan", "D. Selalu menggunakan gambar"], answer: "B" },
+            { id: 43, text: "Dalam pemrograman visual berbasis blok, program dibuat dengan cara ....", options: ["A. Menyusun blok-blok perintah", "B. Menulis seluruh kode mesin", "C. Menggambar tabel", "D. Mengetik dokumen"], answer: "A" },
+            { id: 44, text: "Contoh platform pemrograman visual berbasis blok adalah ....", options: ["A. Scratch", "B. Microsoft Word", "C. Calculator", "D. File Explorer"], answer: "A" },
+            { id: 45, text: "Library dalam pemrograman adalah ....", options: ["A. Kumpulan kode atau fungsi yang dapat digunakan kembali", "B. Folder untuk menyimpan gambar saja", "C. Perangkat keras komputer", "D. Sistem operasi"], answer: "A" },
+            { id: 46, text: "Tujuan penggunaan library adalah ....", options: ["A. Mempercepat dan mempermudah proses pengembangan program", "B. Membuat kode semakin panjang tanpa tujuan", "C. Menghapus semua fungsi", "D. Menghindari penggunaan kode"], answer: "A" },
+            { id: 47, text: "Modularisasi program berarti ....", options: ["A. Membagi program menjadi bagian-bagian atau modul yang lebih kecil", "B. Menggabungkan semua kode menjadi satu baris", "C. Menghapus semua fungsi", "D. Mengubah program menjadi gambar"], answer: "A" },
+            { id: 48, text: "Salah satu keuntungan modularisasi adalah ....", options: ["A. Program lebih sulit diperbaiki", "B. Program lebih mudah dikembangkan, diuji, dan dipelihara", "C. Program tidak dapat digunakan kembali", "D. Program selalu membutuhkan lebih banyak kesalahan"], answer: "B" },
+            { id: 49, text: "Perhatikan pseudocode berikut:\nMulai\nInput nilai\nJika nilai >= 75\n    Tampilkan \"Lulus\"\nJika tidak\n    Tampilkan \"Tidak Lulus\"\nSelesai\nJika nilai yang dimasukkan adalah 80, output yang dihasilkan adalah ....", options: ["A. Tidak Lulus", "B. Lulus", "C. 75", "D. Error"], answer: "B" },
+            { id: 50, text: "Salah satu perbedaan utama pemrograman visual berbasis blok dan pemrograman tekstual adalah ....", options: ["A. Pemrograman blok menggunakan susunan blok, sedangkan pemrograman tekstual menggunakan sintaks berupa teks", "B. Pemrograman blok tidak menggunakan logika", "C. Pemrograman tekstual tidak membutuhkan algoritma", "D. Keduanya tidak dapat digunakan untuk membuat program"], answer: "A" }
+        ];
+
+        // State Variables
+        let currentStudent = { name: '', class: '', answers: new Array(50).fill(null) };
+        let currentQuestionIndex = 0;
+        let timerInterval;
+        let faceCheckInterval;
+        let consecutiveNoFaceCount = 0;
+        let alarmInterval = null;
+        let alarmAudioCtx = null;
+        let timeLeft = 90 * 60; // 90 minutes
+        let isExamActive = false;
+        let hasCameraAccess = false; // Flag ketersediaan/akses kamera perangkat
+        
+        // Anti-cheat Variables
+        let violations = [];
+        const MAX_VIOLATIONS = 4; // 3 warnings, kick on 4th
+
+        // Media Recording Variables
+        let mediaRecorder;
+        let recordedChunks = [];
+        let cameraStream;
+
+        const UI = {
+            screens: { login: document.getElementById('login-screen'), exam: document.getElementById('exam-screen'), result: document.getElementById('result-screen') },
+            form: document.getElementById('login-form'),
+            qNum: document.getElementById('current-q-num'),
+            qText: document.getElementById('question-text'),
+            optionsContainer: document.getElementById('options-container'),
+            btnPrev: document.getElementById('btn-prev'),
+            btnNext: document.getElementById('btn-next'),
+            btnFinish: document.getElementById('btn-finish'),
+            btnGrid: document.getElementById('btn-show-grid'),
+            gridModal: document.getElementById('grid-modal'),
+            gridContainer: document.getElementById('question-grid'),
+            btnCloseGrid: document.getElementById('btn-close-grid'),
+            timer: document.getElementById('timer-display'),
+            video: document.getElementById('camera-preview')
+        };
+
+        function showScreen(screenName) {
+            Object.values(UI.screens).forEach(s => s.classList.add('hide'));
+            UI.screens[screenName].classList.remove('hide');
+        }
+
+        function startRepeatingAlarm() {
+            if (alarmInterval) return;
+            try {
+                if (!alarmAudioCtx) {
+                    alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (alarmAudioCtx.state === 'suspended') {
+                    alarmAudioCtx.resume();
+                }
+
+                const playTone = () => {
+                    if (!alarmAudioCtx) return;
+                    const osc = alarmAudioCtx.createOscillator();
+                    const gain = alarmAudioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(880, alarmAudioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(440, alarmAudioCtx.currentTime + 0.35);
+                    gain.gain.setValueAtTime(1.0, alarmAudioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, alarmAudioCtx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(alarmAudioCtx.destination);
+                    osc.start();
+                    osc.stop(alarmAudioCtx.currentTime + 0.35);
+                };
+
+                playTone();
+                alarmInterval = setInterval(playTone, 500);
+            } catch (e) {
+                console.log("Audio alarm error", e);
+            }
+        }
+
+        function stopRepeatingAlarm() {
+            if (alarmInterval) {
+                clearInterval(alarmInterval);
+                alarmInterval = null;
+            }
+        }
+
+        function customAlert(title, message, isWarning = false, isConfirm = false, triggerAlarm = false) {
+            const modal = document.getElementById('custom-alert');
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            const icon = document.getElementById('alert-icon');
+            const btnOk = document.getElementById('btn-alert-ok');
+            const btnCancel = document.getElementById('btn-alert-cancel');
+            
+            if (isWarning) {
+                icon.innerText = "🚨";
+                modal.children[0].classList.add('flash-warning');
+                if (triggerAlarm) {
+                    startRepeatingAlarm();
+                } else {
+                    playLoudBeep();
+                }
+            } else {
+                icon.innerText = "ℹ️️";
+                modal.children[0].classList.remove('flash-warning');
+            }
+
+            if (isConfirm) {
+                btnCancel.classList.remove('hide');
+                btnOk.innerText = "Ya, Selesaikan Ujian";
+            } else {
+                btnCancel.classList.add('hide');
+                btnOk.innerText = "Kembali Mengerjakan Soal Ujian";
+            }
+            
+            modal.classList.remove('hide');
+            return new Promise(resolve => {
+                btnOk.onclick = () => {
+                    stopRepeatingAlarm();
+                    modal.classList.add('hide');
+                    resolve(true);
+                };
+                btnCancel.onclick = () => {
+                    stopRepeatingAlarm();
+                    modal.classList.add('hide');
+                    resolve(false);
+                };
+            });
+        }
+
+        function playLoudBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 1.0);
+            } catch(e) { console.log(e); }
+        }
+
+        async function setupMedia() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("API Media/Kamera tidak didukung oleh perangkat atau browser ini");
+                }
+
+                let stream = null;
+                // Coba dapatkan video + audio, jika gagal fallback ke video saja
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+                        audio: true
+                    });
+                } catch (e1) {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "user" },
+                        audio: false
+                    });
+                }
+
+                cameraStream = stream;
+                UI.video.srcObject = cameraStream;
+                hasCameraAccess = true;
+                
+                try {
+                    if (typeof MediaRecorder !== 'undefined') {
+                        let options = {};
+                        const mimeTypes = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4', 'video/ogg'];
+                        for (let type of mimeTypes) {
+                            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+                                options = { mimeType: type };
+                                break;
+                            }
+                        }
+                        mediaRecorder = new MediaRecorder(cameraStream, options);
+                        mediaRecorder.ondataavailable = (e) => { 
+                            if (e.data && e.data.size > 0) recordedChunks.push(e.data); 
+                        };
+                        mediaRecorder.start(5000);
+                    }
+                } catch (recErr) {
+                    console.warn("Perekam video tidak didukung pada perangkat ini:", recErr);
+                }
+
+                return true;
+            } catch (err) {
+                hasCameraAccess = false;
+                violations.push("[INFO PERANGKAT] Kamera/Mikrofon tidak dapat diaktifkan (Perangkat Bermasalah)");
+                
+                const badge = document.getElementById('face-status-badge');
+                if (badge) {
+                    badge.innerText = "KAMERA NONAKTIF";
+                    badge.className = "absolute top-1 left-1 right-1 text-[8px] font-bold text-center bg-gray-600 text-white py-0.5 rounded";
+                }
+
+                await customAlert(
+                    "Pemberitahuan Perangkat", 
+                    "Kamera atau mikrofon tidak dapat diaktifkan pada perangkat Anda.\n\nSiswa tetap DIIZINKAN masuk dan mengerjakan ujian secara normal.", 
+                    false
+                );
+                return false;
+            }
+        }
+
+        UI.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            currentStudent.name = document.getElementById('student-name').value.toUpperCase();
+            currentStudent.class = document.getElementById('student-class').value;
+            
+            document.getElementById('header-name').innerText = currentStudent.name;
+            document.getElementById('header-class').innerText = "Kelas: " + currentStudent.class;
+            
+            await setupMedia();
+            startExam();
+        });
+
+        function startExam() {
+            showScreen('exam');
+            isExamActive = true;
+            requestFullScreen();
+            renderQuestion();
+            renderGrid();
+            startTimer();
+            startFaceDetection();
+        }
+
+        // Real-time Face Detection in Camera Frame
+        function startFaceDetection() {
+            if (faceCheckInterval) clearInterval(faceCheckInterval);
+            faceCheckInterval = setInterval(checkFacePresence, 1000);
+        }
+
+        async function checkFacePresence() {
+            // Jika kamera tidak aktif / bermasalah, lewati pengecekan agar siswa tidak kena peringatan palsu
+            if (!isExamActive || !hasCameraAccess || !cameraStream || !UI.video || UI.video.paused || UI.video.ended) return;
+
+            let faceDetected = false;
+
+            // Method 1: Shape Detection API (Native Browser FaceDetector)
+            if ('FaceDetector' in window) {
+                try {
+                    const detector = new window.FaceDetector({ maxDetectedFaces: 1, fastMode: true });
+                    const faces = await detector.detect(UI.video);
+                    if (faces && faces.length > 0) faceDetected = true;
+                } catch (e) {
+                    // Fallback to Canvas Skin Detection
+                }
+            }
+
+            // Method 2: Fallback Pixel & Skin-tone Analysis on Canvas
+            if (!faceDetected) {
+                try {
+                    if (!window.faceCanvas) {
+                        window.faceCanvas = document.createElement('canvas');
+                        window.faceCtx = window.faceCanvas.getContext('2d', { willReadFrequently: true });
+                    }
+                    const canvas = window.faceCanvas;
+                    const ctx = window.faceCtx;
+                    canvas.width = 80;
+                    canvas.height = 60;
+                    ctx.drawImage(UI.video, 0, 0, canvas.width, canvas.height);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    let skinPixels = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i], g = data[i + 1], b = data[i + 2];
+                        if (r > 60 && g > 35 && b > 15 && (Math.max(r, g, b) - Math.min(r, g, b) > 12) && r > g && r > b) {
+                            skinPixels++;
+                        }
+                    }
+                    const skinRatio = skinPixels / (data.length / 4);
+                    if (skinRatio >= 0.06) faceDetected = true;
+                } catch (err) {
+                    faceDetected = true; // Prevent false positives on canvas failure
+                }
+            }
+
+            const badge = document.getElementById('face-status-badge');
+            if (!faceDetected) {
+                consecutiveNoFaceCount++;
+                if (badge) {
+                    badge.innerText = "⚠️ WAJAH TDK ADA";
+                    badge.className = "absolute top-1 left-1 right-1 text-[9px] font-bold text-center bg-red-600 text-white py-0.5 rounded animate-pulse";
+                }
+                if (consecutiveNoFaceCount >= 1) {
+                    consecutiveNoFaceCount = 0;
+                    handleViolation("Wajah tidak terdeteksi pada bingkai perekaman kamera!", "face_missing");
+                }
+            } else {
+                consecutiveNoFaceCount = 0;
+                if (badge) {
+                    badge.innerText = "REC • WAJAH OK";
+                    badge.className = "absolute top-1 left-1 text-[9px] text-white bg-green-600 px-1 rounded font-bold";
+                }
+            }
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                UI.timer.innerText = formatTime(timeLeft);
+                if (timeLeft <= 300) UI.timer.classList.add('text-red-600', 'animate-pulse');
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam("Waktu Habis!");
+                }
+            }, 1000);
+        }
+
+        function renderQuestion() {
+            const q = questionsData[currentQuestionIndex];
+            UI.qNum.innerText = currentQuestionIndex + 1;
+            
+            // Format text (handle newlines for pseudocode)
+            UI.qText.innerHTML = q.text.replace(/\n/g, '<br>');
+            
+            UI.optionsContainer.innerHTML = '';
+            q.options.forEach((opt) => {
+                const optLetter = opt.charAt(0);
+                const isSelected = currentStudent.answers[currentQuestionIndex] === optLetter;
+                
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-4 rounded-lg border-2 mb-2 transition-all duration-200 ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'}`;
+                btn.innerHTML = `<span class="font-bold mr-2">${optLetter}.</span> ${opt.substring(3)}`;
+                btn.onclick = () => selectAnswer(optLetter);
+                UI.optionsContainer.appendChild(btn);
+            });
+
+            // Nav buttons state
+            UI.btnPrev.disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === questionsData.length - 1) {
+                UI.btnNext.classList.add('hide');
+                UI.btnFinish.classList.remove('hide');
+            } else {
+                UI.btnNext.classList.remove('hide');
+                UI.btnFinish.classList.add('hide');
+            }
+        }
+
+        function selectAnswer(letter) {
+            currentStudent.answers[currentQuestionIndex] = letter;
+            renderQuestion();
+            updateGrid();
+        }
+
+        UI.btnPrev.onclick = () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); } };
+        UI.btnNext.onclick = () => { if (currentQuestionIndex < questionsData.length - 1) { currentQuestionIndex++; renderQuestion(); } };
+
+        function renderGrid() {
+            UI.gridContainer.innerHTML = '';
+            questionsData.forEach((_, idx) => {
+                const btn = document.createElement('button');
+                btn.id = `grid-btn-${idx}`;
+                btn.className = `w-10 h-10 rounded border font-medium flex items-center justify-center`;
+                btn.innerText = idx + 1;
+                btn.onclick = () => {
+                    currentQuestionIndex = idx;
+                    renderQuestion();
+                    UI.gridModal.classList.add('hide');
+                };
+                UI.gridContainer.appendChild(btn);
+            });
+            updateGrid();
+        }
+
+        function updateGrid() {
+            questionsData.forEach((_, idx) => {
+                const btn = document.getElementById(`grid-btn-${idx}`);
+                if (!btn) return;
+                
+                if (currentStudent.answers[idx]) {
+                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+                }
+                
+                if (idx === currentQuestionIndex) {
+                    btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-400');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-400');
+                }
+            });
+        }
+
+        UI.btnGrid.onclick = () => UI.gridModal.classList.remove('hide');
+        UI.btnCloseGrid.onclick = () => UI.gridModal.classList.add('hide');
+
+        function requestFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen().catch(e=>{});
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen().catch(e=>{});
+        }
+
+        async function handleViolation(reason, violationType = 'general') {
+            if (!isExamActive) return;
+            
+            // 1x violation counted per incident
+            violations.push(`[${new Date().toLocaleTimeString()}] ${reason}`);
+            const count = violations.length;
+            
+            let alertTitle = "🚨 PELANGGARAN TERDETEKSI!";
+            let alertMessage = "";
+            let triggerAlarm = false;
+
+            if (violationType === 'app_exit') {
+                alertTitle = "🚨 PELANGGARAN: KELUAR APLIKASI!";
+                alertMessage = `Peringatan ${count} dari ${MAX_VIOLATIONS-1}.\nAlasan: Anda terdeteksi meminimalkan / keluar dari aplikasi ujian!\n\nAlarm suara tidak akan berhenti sampai Anda menekan tombol di bawah ini.`;
+                triggerAlarm = true;
+            } else if (violationType === 'screenshot') {
+                alertTitle = "🚨 PELANGGARAN: SCREENSHOT!";
+                alertMessage = `Peringatan ${count} dari ${MAX_VIOLATIONS-1}.\nAlasan: Terdeteksi percobaan tangkapan layar (screenshot) / tombol terlarang!`;
+                triggerAlarm = false;
+            } else if (violationType === 'face_missing') {
+                alertTitle = "🚨 PELANGGARAN: WAJAH TIDAK TERDETEKSI!";
+                alertMessage = `Peringatan ${count} dari ${MAX_VIOLATIONS-1}.\nAlasan: Wajah Anda tidak berada di dalam bingkai perekaman kamera! Pastikan wajah terlihat jelas di kamera.`;
+                triggerAlarm = false;
+            } else {
+                alertMessage = `Peringatan ${count} dari ${MAX_VIOLATIONS-1}.\nAlasan: ${reason}`;
+            }
+
+            if (count >= MAX_VIOLATIONS) {
+                await customAlert("DIKELUARKAN DARI UJIAN!", `KAMU DIKELUARKAN DARI APLIKASI KARENA TELAH MELAKUKAN PELANGGARAN DI BATAS MAKSIMAL (4x).\n\nJawaban Anda tetap disimpan dan dinilai secara otomatis.`, true, false, triggerAlarm);
+                submitExam("Pelanggaran Maksimal (Dikeluarkan)");
+            } else {
+                await customAlert(alertTitle, alertMessage, true, false, triggerAlarm);
+                requestFullScreen();
+            }
+        }
+
+        // 1. Detect Tab Switch / App minimize (1x violation regardless of duration)
+        document.addEventListener("visibilitychange", () => {
+            if (!isExamActive) {
+                if (document.getElementById('result-screen').classList.contains('hide') === false) {
+                    location.reload(); // Lock result screen on screenshot / tab switch
+                }
+                return;
+            }
+
+            if (document.hidden) {
+                handleViolation("Siswa memaksa keluar aplikasi / berpindah tab (1x Melanggar).", "app_exit");
+            }
+        });
+
+        // 2. Detect Screenshot & Key Combinations
+        document.addEventListener('keydown', (e) => {
+            if (!isExamActive) return;
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'c') || e.key === 'PrintScreen' || e.metaKey) {
+                e.preventDefault();
+                handleViolation("Mencoba mengambil screenshot atau shortcut terlarang (1x Melanggar).", "screenshot");
+            }
+        });
+
+        // Block leaving page directly
+        window.addEventListener('beforeunload', function (e) {
+            if (isExamActive) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        UI.btnFinish.onclick = async () => {
+            const unanswered = currentStudent.answers.filter(a => a === null).length;
+            let message = "Apakah Anda yakin ingin menyelesaikan ujian? Jawaban tidak bisa diubah lagi.";
+            
+            if (unanswered > 0) {
+                message = `Masih ada ${unanswered} soal yang belum dijawab.\n\nApakah Anda yakin ingin menyelesaikan ujian sekarang?`;
+            }
+            
+            const confirmed = await customAlert("Konfirmasi Selesai Ujian", message, false, true);
+            if (confirmed) {
+                submitExam("Selesai Normal");
+            }
+        };
+
+        function submitExam(status) {
+            isExamActive = false;
+            clearInterval(timerInterval);
+            if (faceCheckInterval) clearInterval(faceCheckInterval);
+            stopRepeatingAlarm();
+            
+            // Stop media stream
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Calculate Score
+            let correct = 0;
+            currentStudent.answers.forEach((ans, idx) => {
+                if (ans === questionsData[idx].answer) correct++;
+            });
+            const wrong = 50 - correct;
+            const score = correct * 2;
+
+            sendDataToSheets(currentStudent.name, currentStudent.class, correct, wrong, score, status, violations);
+
+            // Setup Result Screen (Only Benar, Salah, Nilai & Pelanggaran)
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-wrong').innerText = wrong;
+            document.getElementById('res-score').innerText = score;
+            
+            document.getElementById('res-violation-count').innerText = violations.length;
+            const ul = document.getElementById('res-violation-list');
+            ul.innerHTML = '';
+            if (violations.length === 0) {
+                ul.innerHTML = '<li class="text-green-600 font-semibold">Tidak ada pelanggaran terdeteksi. Sangat baik!</li>';
+            } else {
+                violations.forEach(v => {
+                    ul.innerHTML += `<li class="text-red-600 font-medium">${v}</li>`;
+                });
+            }
+
+            // Setup Video Download link if chunks exist
+            if (recordedChunks.length > 0) {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const btnDl = document.getElementById('btn-download-video');
+                btnDl.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `REKAMAN_STS_${currentStudent.name.replace(/\s+/g, '_')}.webm`;
+                    a.click();
+                };
+                btnDl.classList.remove('hide');
+            }
+
+            showScreen('result');
+            
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(e=>console.log(e));
+            }
+        }
+
+        function sendDataToSheets(name, cls, correct, wrong, score, status, violationsArray) {
+            // SISIPKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbx0cG8RctPaEtnM01xMk3pXqTuXRuP3cVIKzlBfHZO0mkeoRt8yDOBS8r4sIjugerJh/exec';
+            
+            const formData = new FormData();
+            formData.append('timestamp', new Date().toLocaleString('id-ID'));
+            formData.append('nama', name);
+            formData.append('kelas', cls);
+            formData.append('mapel', 'Informatika');
+            formData.append('benar', correct);
+            formData.append('salah', wrong);
+            formData.append('skor', score);
+            formData.append('status', status);
+            formData.append('pelanggaran', violationsArray.length > 0 ? violationsArray.join(' | ') : 'Tidak Ada Pelanggaran');
+
+            fetch(scriptURL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors'
+            })
+            .then(() => console.log("Data berhasil dikirim ke Google Spreadsheet"))
+            .catch(err => console.error("Gagal mengirim data ke Google Spreadsheet:", err));
+        }
+    </script>
+</body>
+</html>
